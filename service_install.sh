@@ -1,7 +1,8 @@
 #!/bin/sh
 echo "Installing Service..."
-cp ./service/excbot.sh /usr/local/bin/
-cp ./service/excbot.service /etc/systemd/system/excbot.service
+cp -f ./service/excbot.sh /usr/local/bin/
+cp -f ./service/excbot.service /etc/systemd/system/excbot.service
+sudo chmod a+x /usr/local/bin/excbot.sh
 echo "Done!"
 sudo systemctl daemon-reload
 sudo systemctl enable excbot
