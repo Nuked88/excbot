@@ -13,7 +13,7 @@ def job():
 
 if __name__ == '__main__':
     scheduler = BackgroundScheduler()
-    scheduler.add_job(job, 'interval', seconds=17)
+    scheduler.add_job(job, 'interval', seconds=45)
     scheduler.start()
     print('Press Ctrl+{0} to exit'.format('Break' if os.name == 'nt' else 'C'))
 

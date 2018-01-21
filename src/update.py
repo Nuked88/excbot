@@ -13,7 +13,7 @@ prices = client.get_all_tickers()
 
 cdb =  MongoClient('localhost', 27017)
 db = cdb.excbot
-data = db.data
+data = db.data2
 import datetime
 
 
@@ -29,7 +29,8 @@ def update():
     #prices = client.get_symbol_ticker("TRXETH")
     #xt=prices['price']
     #xt = [val['price'] for val in prices if val['symbol'] == sym] 
-    pprint(prices)
+    #pprint(prices)
+    posts=[]
     for val in prices:
         sym= val['symbol']
         xt= val['price']
@@ -56,7 +57,8 @@ def update():
         post = {"sym": sym,"price": float(xt),"cfp": float(var),"date": datetime.datetime.utcnow()}
 
         if float(var)!=0.00000 or datacount == 0 or old_price==0.00000:
-            data.insert_one(post)
-            pprint("Inserted: "+var+ "for "+ sym)
+            posts.append(post)
+            #pprint("Append: "+var+ "for "+ sym)
 
+    data.insert_many(posts,True,True)
 update()
