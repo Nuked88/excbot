@@ -4,7 +4,7 @@
  
 function d_start ( ) 
 { 
-	echo  "Excbot: starting service" 
+	echo  "Excbot: starting service!" 
 	python3 /home/nuked/dev/bot/src/main.py --pidfile = /tmp/excbot.pid #REPLACE THE PATH
 	 sleep  5 
 	echo  "PID is $ (cat /tmp/excbot.pid) " 
