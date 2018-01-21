@@ -7,13 +7,13 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 def job():
     #print("In job")
-    call(['python', './src/update.py'])
+    call(['python', 'update.py'])
     #call(['python', 'show.py'])
 
 
 if __name__ == '__main__':
     scheduler = BackgroundScheduler()
-    scheduler.add_job(job, 'interval', seconds=7)
+    scheduler.add_job(job, 'interval', seconds=17)
     scheduler.start()
     print('Press Ctrl+{0} to exit'.format('Break' if os.name == 'nt' else 'C'))
 
