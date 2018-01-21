@@ -3,7 +3,7 @@
 d_start()
 {
 	echo  "Excbot: starting service!" 
-	python3 /home/nuked/dev/bot/src/main.py &
+	/home/nuked/dev/bot/run.sh &
     echo $!>/var/run/excbot.pid
    
 }
