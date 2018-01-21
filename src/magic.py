@@ -11,73 +11,81 @@ import pymongo
 from pymongo import MongoClient
 from pprint import pprint
 
+#cdb =  MongoClient('173.249.9.155', 27017)
 cdb =  MongoClient('localhost', 27017)
 db = cdb.excbot
 data = db.data
 score = db.score
-# 1. Download sunspot dataset and upload the same to dataset directory
-#    Load the sunspot dataset as an Array
-
-#data = loadtxt("sunspots.txt", float)
-
-# 2. View the data as a table
-#data_as_frame = pd.DataFrame(data, columns=['Months', 'SunSpots'])
-#data_as_frame.head()
-#
+maxRes=40000
+sym = "ETHUSDT"
 
 
+def way(array):
+  prevValue = 0
+  wWay=0
+  for a in array:
+    if a > prevValue:
+      wWay=wWay+1
+    else:
+      wWay=wWay-1
+    prevValue=a
+  return wWay
 
 
 def getData():
     datacount= data.aggregate([
-      { "$match": { "sym": "TRXETH"} },
+      { "$match": { "sym": sym} },
       { "$project": {
           "year": { "$year": '$date'},
           "month": { "$month": '$date'},
           "day": { "$dayOfMonth": '$date'},
           "hour": { "$hour": '$date'},
           "minute": { "$minute": '$date'},
-          "price": 1  
+          "price": 1, 
+          "date":1
       }},
       {
           "$group": {
-          "_id": { "year": '$year', "month": '$month', "day": '$day', "hour": '$hour', "minute": '$minute'},
+          "_id": { "date":"$date"},
           "price":{
               "$avg": "$price"
           }}
       },
       {
-          "$limit":40
+          "$limit":maxRes
       },
-      { "$sort" : { "_id" : -1 } }])
-    prevPrice = 0.01
+      { "$sort" : { '_id.date': 1 } }])
     score=0
     i=0
-    armonica=0.1
+    armonica=0
     list1=[]
+    b=[]
     
     for a in datacount:
      if str(a["price"]) != 'None':
        i=i+1
        tarr=[]
-       #pprint(i)
+       #pprint(str(a["price"])+"-"+str(a["_id"]))
        tarr.append(i)
        tarr.append(a["price"])
+       tarr.append(a["_id"]["date"])
+       b.append(a["price"])
        list1.append(tarr)
+       
        #list1['SunSpots'].append(a["price"])
        armonica=float(armonica)+(1/float(a["price"]))
       
-
+    #PRINT DATE
+    pprint(list1[i-1][2])
+    #mi dice se va su o giù 
+    res=(100*way(b))/maxRes
+    pprint(str(res)+"%")
 
     #media armonica prezzi
+    pprint(i)
     armonica=i/float(armonica)
-    pprint(armonica)
     return [list1,armonica]
 
-
-data = getData()
-data_as_frame = pd.DataFrame(data[0], columns=['Months', 'SunSpots'])
-data_as_frame.head()
 
 
 # 3. Lets define some use-case specific UDF(User Defined Functions)
@@ -122,7 +130,7 @@ def explain_anomalies(y, window_size, sigma=1.0):
   # Calculate the variation in the distribution of the residual
   std = np.std(residual)
   return {'standard_deviation': round(std, 8),
-          'anomalies_dict': collections.OrderedDict([(index, y_i) for
+          'ad': collections.OrderedDict([(index, y_i) for
                                                      index, y_i, avg_i in zip(count(), y, avg)
             if (y_i > avg_i + (sigma*std)) | (y_i < avg_i - (sigma*std))])}
 
@@ -187,37 +195,34 @@ def plot_results(x, y, window_size, sigma_value=1,
     else:
         events = explain_anomalies(y, window_size=window_size, sigma=sigma_value)
 
-    x_anomaly = np.fromiter(events['anomalies_dict'].keys(), dtype=int, count=len(events['anomalies_dict']))
-    y_anomaly = np.fromiter(events['anomalies_dict'].values(), dtype=float,
-                                            count=len(events['anomalies_dict']))
-    #plt.plot(x_anomaly, y_anomaly, "r*", markersize=12)
+    x_anomaly = np.fromiter(events['ad'].keys(), dtype=int, count=len(events['ad']))
+    y_anomaly = np.fromiter(events['ad'].values(), dtype=float,
+                                            count=len(events['ad']))
+    return events
 
-    # add grid and lines and enable the plot
-    #plt.grid(True)
-    #plt.show()
-    pprint(events)
+
+def calcPer(old,new):
+  #http://www.marcolazzari.it/blog/2010/08/24/come-calcolare-le-percentuali-con-excel-o-con-calc/
+  diffP= (1-float(new)/old)* 100
+  return diffP
 
 # 4. Lets play with the functions
+
+data = getData()
+data_as_frame = pd.DataFrame(data[0], columns=['Months', 'SunSpots','Date'])
+data_as_frame.head()
+pprint(data[1])
 x = data_as_frame['Months']
 Y = data_as_frame['SunSpots']
 
 # plot the results
-plot_results(x, y=Y, window_size=10, text_xlabel="Minutes", sigma_value=5,text_ylabel="No. of Sun spots")
-#events = explain_anomalies(y, window_size=5, sigma=3, applying_rolling_std=True)
-
-# Display the anomaly dict
-#print("Information about the anomalies model:{}".format(events))
+anomaly=plot_results(x, y=Y, window_size=10, text_xlabel="Minutes", sigma_value=10,text_ylabel="No. of Sun spots")
 
 
 
-
-def calcPer(old,new):
-	#http://www.marcolazzari.it/blog/2010/08/24/come-calcolare-le-percentuali-con-excel-o-con-calc/
-	diffP= (1-float(new)/old)* 100
-	return diffP
-
-
-
+final = anomaly['ad']
+rev= list(final.items())[-1]
+pprint(rev)
 
 
 #getData()

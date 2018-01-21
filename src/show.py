@@ -20,7 +20,7 @@ start_date = datetime(2018, 1, 13, 0, 00, 00)
 varn=0.000
 
 sym = 'DNTETH'
-cdb =  MongoClient('mongodb', 27017)
+cdb =  MongoClient('localhost', 27017)
 db = cdb.excbot
 data = db.data
 
