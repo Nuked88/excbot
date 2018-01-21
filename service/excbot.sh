@@ -6,7 +6,7 @@ d_start()
 	python3 /home/nuked/dev/bot/src/main.py --pidfile = /var/run/excbot.pid #REPLACE THE PATH
   sleep  5 
 	echo $!>/var/run/hit.pid
-   ;;
+   ;; 
 }
  
 d_stop () 
