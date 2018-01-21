@@ -1,4 +1,5 @@
 #!/bin/sh
+sudo chmod a+x ./run.sh
 echo "Installing Service..."
 cp -f ./service/excbot.sh /usr/local/bin/
 cp -f ./service/excbot.service /etc/systemd/system/excbot.service
