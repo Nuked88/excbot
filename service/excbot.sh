@@ -5,21 +5,20 @@ d_start()
 	echo  "Excbot: starting service!" 
 	python3 /home/nuked/dev/bot/src/main.py --pidfile = /var/run/excbot.pid #REPLACE THE PATH
   sleep  5 
-	echo $!>/var/run/hit.pid
-   ;; 
+	echo $!>/var/run/excbot.pid
 }
  
 d_stop () 
 { 
-	echo  "Excbot: stopping Service (PID = $ (cat /tmp/excbot.pid))" 
+	echo  "Excbot: stopping Service (PID = $ (cat /var/run/excbot.pid))" 
 	kill `cat /var/run/excbot.pid`
-	rm  /tmp/excbot.pid
+	rm  /var/run/excbot.pid
  }
  
 d_status () 
 { 
 	ps  -ef  |  grep deluged |  grep  -v  grep 
-	echo  "PID indicate indication file $ (cat /tmp/excbot.pid 2&gt; / dev / null) " 
+	echo  "PID indicate indication file $ (cat /var/run/excbot.pid 2&gt; / dev / null) " 
 }
  
 # Some Things That run always 
