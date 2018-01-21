@@ -56,7 +56,7 @@ def update():
         post = {"sym": sym,"price": float(xt),"cfp": float(var),"date": datetime.datetime.utcnow()}
 
         if float(var)!=0.00000 or datacount == 0 or old_price==0.00000:
-            post_id = data.insert_one(post).inserted_id
+            data.insert_one(post)
             pprint("Inserted: "+var+ "for "+ sym)
 
 update()
