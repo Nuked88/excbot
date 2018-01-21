@@ -8,3 +8,4 @@ sudo systemctl daemon-reload
 sudo systemctl enable excbot
 echo "Starting service!"
 sudo systemctl start excbot
+sudo systemctl status excbot.service
