@@ -1,12 +1,12 @@
-[Unit] 
+[Unit]
 Description = Deluge daemon
 After network.target = auditd.service
 
 [Service]
 Type = forking
-ExecStart = /usr/local/bin/ start excbot.sh
-ExecStop = /usr/local/bin/ stop excbot.sh
-ExecReload = /usr/local/bin/ reload excbot.sh
+ExecStart = /usr/local/bin/excbot.sh start
+ExecStop = /usr/local/bin/excbot.sh stop
+ExecReload = /usr/local/bin/excbot.sh restart
 
 [Install]
 WantedBy = multi-user.target

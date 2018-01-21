@@ -1,23 +1,21 @@
-#! / bin / bash  
-# /usr/local/bin/deluge.sh 
-
+#!/bin/bash  
  
-function d_start ( ) 
-{ 
+d_start()
+{
 	echo  "Excbot: starting service!" 
 	python3 /home/nuked/dev/bot/src/main.py --pidfile = /tmp/excbot.pid #REPLACE THE PATH
-	 sleep  5 
+  sleep  5 
 	echo  "PID is $ (cat /tmp/excbot.pid) " 
 }
  
-function d_stop ( ) 
+d_stop () 
 { 
-	echo  "Excbot: stopping Service (PID = $ (cat /tmp/excbot.pid) )" 
-	kill $ ( cat  /tmp/excbot.pid ) 
+	echo  "Excbot: stopping Service (PID = $ (cat /tmp/excbot.pid))" 
+	kill 'cat  /tmp/excbot.pid' 
 	rm  /tmp/excbot.pid
  }
  
-function d_status ( ) 
+d_status () 
 { 
 	ps  -ef  |  grep deluged |  grep  -v  grep 
 	echo  "PID indicate indication file $ (cat /tmp/excbot.pid 2&gt; / dev / null) " 
@@ -27,23 +25,23 @@ function d_status ( )
 touch  /var/lock/excbot
  
 # Management instructions of the service 
-box  "$ 1"  in 
-	start )
+case  "$1"  in 
+	start)
 		d_start
 		;; 
-	Stop )
+	stop)
 		d_stop
 		;; 
-	Reload )
+	restart)
 		d_stop
 		sleep  1
 		d_start
 		;; 
-	Status )
+	status)
 		d_status
 		;; 
 	* ) 
-	Echo  "Usage: $ 0 {start | stop | reload | status}" 
+	echo  "Usage: $ 0 {start | stop | reload | status}" 
 	exit  1 
 	;; 
 esac
