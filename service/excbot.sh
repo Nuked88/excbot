@@ -3,9 +3,9 @@
 d_start()
 {
 	echo  "Excbot: starting service!" 
-	python3 /home/nuked/dev/bot/src/main.py --pidfile = /var/run/excbot.pid #REPLACE THE PATH
-  sleep  5 
-	echo $!>/var/run/excbot.pid
+	python3 /home/nuked/dev/bot/src/main.py &
+    echo $!>/var/run/excbot.pid
+   
 }
  
 d_stop () 
