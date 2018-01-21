@@ -1,0 +1,21 @@
+image: docker:latest
+
+services:
+  - docker:dind
+
+stages:
+    - build
+
+before_script:
+    - docker info
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.com
+
+build:
+    stage: build
+    script:
+        - docker build -t registry.gitlab.com/nuked88/excbot .
+        - docker push registry.gitlab.com/nuked88/excbot
+    only:
+        - master
+    tags:
+        - docker

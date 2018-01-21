@@ -1,0 +1,9 @@
+data
+.gitlab-ci.yml
+build.sh
+docker-compose.yml
+Dockerfile
+requirements.txt
+start.sh
+stop.sh
+wait
