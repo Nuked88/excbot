@@ -3,15 +3,16 @@
 d_start()
 {
 	echo  "Excbot: starting service!" 
-	python3 /home/nuked/dev/bot/src/main.py --pidfile = /tmp/excbot.pid #REPLACE THE PATH
+	python3 /home/nuked/dev/bot/src/main.py --pidfile = /var/run/excbot.pid #REPLACE THE PATH
   sleep  5 
-	echo  "PID is $ (cat /tmp/excbot.pid) " 
+	echo $!>/var/run/hit.pid
+   ;;
 }
  
 d_stop () 
 { 
 	echo  "Excbot: stopping Service (PID = $ (cat /tmp/excbot.pid))" 
-	kill 'cat  /tmp/excbot.pid' 
+	kill `cat /var/run/excbot.pid`
 	rm  /tmp/excbot.pid
  }
  
