@@ -61,4 +61,5 @@ def update():
             #pprint("Append: "+var+ "for "+ sym)
 
     data.insert_many(posts,True,True)
+    pprint("Ok")
 update()
