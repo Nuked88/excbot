@@ -7,7 +7,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 def job():
     #print("In job")
-    call(['python', 'update.py'])
+    call(['python3', 'update.py'])
     #call(['python', 'show.py'])
 
 
