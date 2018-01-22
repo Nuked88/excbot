@@ -1,5 +1,5 @@
 [Unit]
-Description = Deluge daemon
+Description = Excbot daemon
 After network.target = auditd.service
 
 [Service]
