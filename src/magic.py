@@ -1,26 +1,27 @@
-from __future__ import division
-from itertools import count
-import matplotlib.pyplot as plt
-from numpy import linspace, loadtxt, ones, convolve
 import numpy as np
-import pandas as pd
 import collections
 from random import randint
-from matplotlib import style
+import matplotlib.pyplot as plt
+from numpy import genfromtxt
+from scipy.stats import multivariate_normal
+from sklearn.metrics import f1_score
 import pymongo
 from pymongo import MongoClient
 from pprint import pprint
 
-#cdb =  MongoClient('173.249.9.155', 27017)
-cdb =  MongoClient('localhost', 27017)
+cdb =  MongoClient('173.249.9.155', 27017)
+#cdb =  MongoClient('localhost', 27017)
 db = cdb.excbot
-data = db.data
+data = db.data2
 score = db.score
 maxRes=40000
 sym = "ETHUSDT"
+maxSplit=25
+aggregateData=5
 
 
-def way(array):
+
+def way(array,value):
   prevValue = 0
   wWay=0
   for a in array:
@@ -29,10 +30,22 @@ def way(array):
     else:
       wWay=wWay-1
     prevValue=a
-  return wWay
 
+  if wWay<0:
+    value=abs(value)*-1  
+  else:
+    value=abs(value)
 
-def getData():
+  return wWay,value
+
+def symList():
+  symLi=[]
+  datac= data.aggregate([{"$group": { "_id": '$sym'} }])
+  for a in datac:
+    symLi.append(a['_id'])
+  return symLi
+
+def getData(sym):
     datacount= data.aggregate([
       { "$match": { "sym": sym} },
       { "$project": {
@@ -42,11 +55,12 @@ def getData():
           "hour": { "$hour": '$date'},
           "minute": { "$minute": '$date'},
           "price": 1, 
-          "date":1
+          "date":1,
+          "cfp":1
       }},
       {
           "$group": {
-          "_id": { "date":"$date"},
+          "_id": { "date":"$date","cfp":"$cfp"},
           "price":{
               "$avg": "$price"
           }}
@@ -65,140 +79,52 @@ def getData():
      if str(a["price"]) != 'None':
        i=i+1
        tarr=[]
-       #pprint(str(a["price"])+"-"+str(a["_id"]))
+ 
        tarr.append(i)
        tarr.append(a["price"])
-       tarr.append(a["_id"]["date"])
+
+       tarr.append(a["_id"]["cfp"])
        b.append(a["price"])
        list1.append(tarr)
-       
-       #list1['SunSpots'].append(a["price"])
        armonica=float(armonica)+(1/float(a["price"]))
       
     #PRINT DATE
-    pprint(list1[i-1][2])
-    #mi dice se va su o giù 
-    res=(100*way(b))/maxRes
-    pprint(str(res)+"%")
-
-    #media armonica prezzi
-    pprint(i)
+    #pprint("Ultima data:")
+    #pprint(list1)
+   
     armonica=i/float(armonica)
-    return [list1,armonica]
+    return list1,armonica
 
 
 
-# 3. Lets define some use-case specific UDF(User Defined Functions)
 
-def moving_average(data, window_size):
-    """ Computes moving average using discrete linear convolution of two one dimensional sequences.
-    Args:
-    -----
-            data (pandas.Series): independent variable
-            window_size (int): rolling window size
+def feature_normalize(dataset):
+    mu = np.mean(dataset,axis=0)
+    sigma = np.std(dataset,axis=0)
+    return (dataset - mu)/sigma
 
-    Returns:
-    --------
-            ndarray of linear convolution
-
-    References:
-    ------------
-    [1] Wikipedia, "Convolution", http://en.wikipedia.org/wiki/Convolution.
-    [2] API Reference: https://docs.scipy.org/doc/numpy/reference/generated/numpy.convolve.html
-
-    """
-    window = np.ones(int(window_size))/float(window_size)
-    return np.convolve(data, window, 'same')
+def estimateGaussian(dataset):
+    mu = np.mean(dataset, axis=0)
+    sigma = np.cov(dataset.T)
+    return mu, sigma
+    
+def multivariateGaussian(dataset,mu,sigma):
+    p = multivariate_normal(mean=mu, cov=sigma)
+    return p.pdf(dataset)
 
 
-def explain_anomalies(y, window_size, sigma=1.0):
-  """ Helps in exploring the anamolies using stationary standard deviation
-  Args:
-  -----
-      y (pandas.Series): independent variable
-      window_size (int): rolling window size
-      sigma (int): value for standard deviation
+#find normal way
 
-  Returns:
-  --------
-      a dict (dict of 'standard_deviation': int, 'anomalies_dict': (index: value))
-      containing information about the points indentified as anomalies
+#give numeric value of a number if you give the %
+def perFor(value,per):
+  return (value*per)/100
 
-  """
-  avg = moving_average(y, window_size).tolist()
-  residual = y - avg
-  # Calculate the variation in the distribution of the residual
-  std = np.std(residual)
-  return {'standard_deviation': round(std, 8),
-          'ad': collections.OrderedDict([(index, y_i) for
-                                                     index, y_i, avg_i in zip(count(), y, avg)
-            if (y_i > avg_i + (sigma*std)) | (y_i < avg_i - (sigma*std))])}
+#sum the % at a value
+def perSum(value,per):
+  return value*(1+per/100)
 
-
-def explain_anomalies_rolling_std(y, window_size, sigma=1.0):
-    """ Helps in exploring the anamolies using rolling standard deviation
-    Args:
-    -----
-        y (pandas.Series): independent variable
-        window_size (int): rolling window size
-        sigma (int): value for standard deviation
-
-    Returns:
-    --------
-        a dict (dict of 'standard_deviation': int, 'anomalies_dict': (index: value))
-        containing information about the points indentified as anomalies
-    """
-    avg = moving_average(y, window_size)
-    avg_list = avg.tolist()
-    residual = y - avg
-    # Calculate the variation in the distribution of the residual
-    testing_std = pd.rolling_std(residual, window_size)
-    testing_std_as_df = pd.DataFrame(testing_std)
-    rolling_std = testing_std_as_df.replace(np.nan,
-                                  testing_std_as_df.ix[window_size - 1]).round(3).iloc[:,0].tolist()
-    std = np.std(residual)
-    return {'stationary standard_deviation': round(std, 3),
-            'anomalies_dict': collections.OrderedDict([(index, y_i)
-                                                       for index, y_i, avg_i, rs_i in zip(count(),
-                                                                                           y, avg_list, rolling_std)
-              if (y_i > avg_i + (sigma * rs_i)) | (y_i < avg_i - (sigma * rs_i))])}
-
-
-# This function is repsonsible for displaying how the function performs on the given dataset.
-def plot_results(x, y, window_size, sigma_value=1,
-                 text_xlabel="X Axis", text_ylabel="Y Axis", applying_rolling_std=False):
-    """ Helps in generating the plot and flagging the anamolies.
-        Supports both moving and stationary standard deviation. Use the 'applying_rolling_std' to switch
-        between the two.
-    Args:
-    -----
-        x (pandas.Series): dependent variable
-        y (pandas.Series): independent variable
-        window_size (int): rolling window size
-        sigma_value (int): value for standard deviation
-        text_xlabel (str): label for annotating the X Axis
-        text_ylabel (str): label for annotatin the Y Axis
-        applying_rolling_std (boolean): True/False for using rolling vs stationary standard deviation
-    """
-    #plt.figure(figsize=(15, 8))
-    #plt.plot(x, y, "k.")
-    #y_av = moving_average(y, window_size)
-    #plt.plot(x, y_av, color='green')
-    #plt.xlim(0, 600)
-    #plt.xlabel(text_xlabel)
-    #plt.ylabel(text_ylabel)
-
-    # Query for the anomalies and plot the same
-    events = {}
-    if applying_rolling_std:
-        events = explain_anomalies_rolling_std(y, window_size=window_size, sigma=sigma_value)
-    else:
-        events = explain_anomalies(y, window_size=window_size, sigma=sigma_value)
-
-    x_anomaly = np.fromiter(events['ad'].keys(), dtype=int, count=len(events['ad']))
-    y_anomaly = np.fromiter(events['ad'].values(), dtype=float,
-                                            count=len(events['ad']))
-    return events
+def perRem(value,per):
+  return value*(1-per/100)
 
 
 def calcPer(old,new):
@@ -206,24 +132,218 @@ def calcPer(old,new):
   diffP= (1-float(new)/old)* 100
   return diffP
 
-# 4. Lets play with the functions
 
-data = getData()
-data_as_frame = pd.DataFrame(data[0], columns=['Months', 'SunSpots','Date'])
-data_as_frame.head()
-pprint(data[1])
-x = data_as_frame['Months']
-Y = data_as_frame['SunSpots']
+def thresholdCalc(dataset,minAggregation):
+    i=1
+    cfp=0
+    cfp2=0
+    subArr=[]
+    mainArr=[]
+    for a in dataset:
+      if i>=minAggregation:
+        subArr=[]
+        #somma valori e fai la media
+        
+        mcfp=cfp/minAggregation
+        mcfp2=cfp2/minAggregation
+        #pprint(a[0])
+        subArr.append(a[0])
+        subArr.append(mcfp)
+        subArr.append(mcfp2)
+        #pprint("media:"+str(mcfp))
+        mainArr.append(subArr)
+        cfp=0
+        cfp2=0
+        i=0
+      #pprint(cfp)
+      cfp=float(cfp)+float(a[1])
+      cfp2=float(cfp2)+float(a[2])
+      i=i+1
+      
 
-# plot the results
-anomaly=plot_results(x, y=Y, window_size=10, text_xlabel="Minutes", sigma_value=10,text_ylabel="No. of Sun spots")
+    return mainArr
+
+def myround(x, base=5):
+    return int(base * round(float(x)/base))
+
+def elaborateData(dataset):
+  i=1
+
+  fullDataset=[]
+  for a in dataset:
+    newDataset=[]
+    newDataset.append(a[0])
+    standardDeviation= abs(perFor(a[1],a[2]))
+    #pprint(str(standardDeviation)+"+"+str(a[1]))
+    devmax=a[1]+standardDeviation
+    
+    newDataset.append(devmax)
+    newDataset.append(a[1]-standardDeviation)
+    fullDataset.append(newDataset)
+  return fullDataset
+
+def searchList(lists,index):
+  v1=0
+  v2=0
+
+  for a in lists:
+    if a[0]==index:
+      v1=a[1]
+      v2=a[2]
+  return v1,v2
+
+
+def anomalyDetector(dataset,limit,margin):
+  fds=[]
+  for a in dataset:
+    index=myround(a[0])
+    nds=[]
+    #pprint(limit)
+    v1,v2=searchList(limit,index)
+    if a[1] > perSum(v1,margin) or a[1] < perRem(v2,margin):
+      nds.append(a[0])
+      nds.append(a[1])
+      fds.append(nds)
+  return fds
+
+
+def startMagic(sym,enableGraph):
+  #lets start
+  l,arm= getData(sym)
+  #pprint(l)
+  
+  tr_data=np.array(l)
+  data = elaborateData(l)
+  #pprint(data)
+  data=thresholdCalc(data,aggregateData)
+  #pprint(data)
+  th_data=np.array(data)
+  #y=np.array(arm)
+  
+  
+  n_dim = tr_data.shape[1]
+  #normal point
+  x=tr_data[:,0]
+  y=tr_data[:,1]
+  
+  #margin
+  xT=th_data[:,0]
+  yTp=th_data[:,1]
+  yTm=th_data[:,2]
+  
+  #anomaly
+  anmly=anomalyDetector(l,data,1)
+  ta_data=np.array(anmly)
+  #pprint(anmly)
+  xA=ta_data[:,0]
+  yA=ta_data[:,1]
+  
+  
+  
+  if enableGraph == 1:
+  
+    plt.figure()
+    plt.xlabel("Minutes (X)")
+    plt.ylabel("Price "+ sym + " (Y)")
+    
+    #normal point minute/price
+    plt.plot(x,y,"b.")
+    #anomaly with X
+    plt.plot(xA,yA,"rx")
+    #margin up and down outside is an anomaly
+    plt.plot(xT,yTp,"g-")
+    plt.plot(xT,yTm,"g-")
+  
+  n_r = np.count_nonzero(th_data)
+  #pprint(n_r)
+  th_data_split=np.array_split(th_data, maxSplit)
+  
+  futureDirection=[]
+  
+  #draw segment
+  for c in th_data_split:
+    xT2=c[:,0]
+    yTp2=c[:,1]
+    yTm2=c[:,2]
+  
+    m, b = np.polyfit(xT2, yTp2, 1)
+    m2, b2 = np.polyfit(xT2, yTm2, 1)
+  
+    futureDirection.append(m)
+   
+    #vector data analisis divided by X minutes (max Split)
+    if enableGraph == 1:
+      plt.plot(xT2, m*xT2 + b, '-')
+      plt.plot(xT2, m2*xT2 + b2, '-')
+  
+  
+  
+  
+  
+  #ATF 0.001 MILESTRONE (Assume The Future)
+  future_data=[]
+  lastInd=xT2[::-1][0]
+  lastY=yTp2[::-1][0]
+  nextInd=round((n_r/maxSplit),0)
+  
+  #pprint("Previsione nei prossimi "+ str(nextInd) +" minuti")
+  
+  direction,m=way(futureDirection,m)
+  
+  for d in range(0,int(nextInd)):
+    internalArr=[]
+    #se  lastY:m*(lastInd-1) + b = {FUTURE}:m*lastInd + b
+  
+    #quindi {FUTURE}=(lastY*(m*lastInd + b))/(m*(lastInd-1) + b)
+    lastInd=lastInd+1 
+    nextVal=(lastY*(m*lastInd + b))/(m*(lastInd-1) + b)
+    lastY=nextVal
+    #pprint(nextVal)
+    internalArr.append(lastInd)
+    internalArr.append(nextVal)
+    future_data.append(internalArr)
+  
+  
+  
+  #pprint(direction)
+  future_data=np.array(future_data)
+  xF=future_data[:,0]
+  yF=future_data[:,1]
+  
+  if enableGraph == 1:
+    plt.plot(xF, yF, 'g--')
+    plt.show()
+
+  return direction,nextInd,future_data
 
 
 
-final = anomaly['ad']
-rev= list(final.items())[-1]
-pprint(rev)
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+#-----------------------------------------------------------------------------------------------------------------
+#start the fun
+symbols=symList()
+#
+for symbol in symbols:
+  #pprint(symbol)
+  if symbol!="123456":
+    direction,nextInd,future_data= startMagic(symbol,0)
+    
+    if direction>0:
+      stringa=bcolors.OKGREEN +"Positive" 
+    else: 
+      stringa=bcolors.FAIL +"Negative" 
+    print(f"Prevision for {symbol} is {stringa} by {direction} Price can go from: {future_data[0][1]} to {future_data[-1][1]} {bcolors.ENDC}")
+    #print("Prevision is "+ stringa +" by "+str(direction)+" Price can go from: "+str(future_data[0][1])+" to "+str(future_data[-1][1]))
 
 #getData()
 
