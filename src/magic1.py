@@ -11,8 +11,8 @@ import pymongo
 from pymongo import MongoClient
 from pprint import pprint
 
-#cdb =  MongoClient('173.249.9.155', 27017)
-cdb =  MongoClient('localhost', 27017)
+cdb =  MongoClient('173.249.9.155', 27017)
+#cdb =  MongoClient('localhost', 27017)
 db = cdb.excbot
 data = db.data2
 score = db.score
