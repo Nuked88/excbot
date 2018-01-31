@@ -9,8 +9,8 @@ import pymongo
 from pymongo import MongoClient
 from pprint import pprint
 
-#cdb =  MongoClient('173.249.9.155', 27017)
-cdb =  MongoClient('localhost', 27017)
+cdb =  MongoClient('173.249.9.155', 27017)
+#cdb =  MongoClient('localhost', 27017)
 db = cdb.excbot
 data = db.data2
 score = db.score
@@ -24,13 +24,14 @@ aggregateData=5
 def way(array,value):
   prevValue = 0
   wWay=0
+  i=0
   for a in array:
     if a > prevValue:
-      wWay=wWay+1
+      wWay=wWay+1+i
     else:
-      wWay=wWay-1
+      wWay=wWay-1-i
     prevValue=a
-
+    i=i+1
   if wWay<0:
     value=abs(value)*-1  
   else:
