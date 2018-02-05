@@ -8,6 +8,18 @@ from sklearn.metrics import f1_score
 import pymongo
 from pymongo import MongoClient
 from pprint import pprint
+import os
+
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 cdb =  MongoClient('173.249.9.155', 27017)
 #cdb =  MongoClient('localhost', 27017)
@@ -19,15 +31,21 @@ sym = "ETHUSDT"
 maxSplit=25
 aggregateData=5
 
+#define way vector goes in the future (prediction)
 
+#model
+# se va su e poi va giù /dopo quanto /di quanto /continuo da prima?
 
 def way(array,value):
   prevValue = 0
   wWay=0
   i=0
+
+  
   for a in array:
     if a > prevValue:
       wWay=wWay+1+i
+
     else:
       wWay=wWay-1-i
     prevValue=a
@@ -96,9 +114,6 @@ def getData(sym):
     armonica=i/float(armonica)
     return list1,armonica
 
-
-
-
 def feature_normalize(dataset):
     mu = np.mean(dataset,axis=0)
     sigma = np.std(dataset,axis=0)
@@ -112,7 +127,6 @@ def estimateGaussian(dataset):
 def multivariateGaussian(dataset,mu,sigma):
     p = multivariate_normal(mean=mu, cov=sigma)
     return p.pdf(dataset)
-
 
 #find normal way
 
@@ -266,14 +280,12 @@ def startMagic(sym,enableGraph):
     xT2=c[:,0]
     yTp2=c[:,1]
     yTm2=c[:,2]
-  
     m, b = np.polyfit(xT2, yTp2, 1)
     m2, b2 = np.polyfit(xT2, yTm2, 1)
-  
     futureDirection.append(m)
-   
-    #vector data analisis divided by X minutes (max Split)
-    if enableGraph == 1:
+
+      #vector data analisis divided by X minutes (max Split)
+  if enableGraph == 1:
       plt.plot(xT2, m*xT2 + b, '-')
       plt.plot(xT2, m2*xT2 + b2, '-')
   
@@ -304,7 +316,7 @@ def startMagic(sym,enableGraph):
     internalArr.append(nextVal)
     future_data.append(internalArr)
   
-  
+  direction2=m
   
   #pprint(direction)
   future_data=np.array(future_data)
@@ -315,37 +327,44 @@ def startMagic(sym,enableGraph):
     plt.plot(xF, yF, 'g--')
     plt.show()
 
-  return direction,nextInd,future_data
+  return direction,nextInd,future_data,direction2
 
-
-
-
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+clear = lambda: os.system('cls')
 
 #-----------------------------------------------------------------------------------------------------------------
 #start the fun
-symbols=symList()
-#
-for symbol in symbols:
-  #pprint(symbol)
-  if symbol!="123456":
-    direction,nextInd,future_data= startMagic(symbol,0)
-    
-    if direction>0:
-      stringa=bcolors.OKGREEN +"Positive" 
-    else: 
-      stringa=bcolors.FAIL +"Negative" 
-    print(f"Prevision for {symbol} is {stringa} by {direction} Price can go from: {future_data[0][1]} to {future_data[-1][1]} {bcolors.ENDC}")
-    #print("Prevision is "+ stringa +" by "+str(direction)+" Price can go from: "+str(future_data[0][1])+" to "+str(future_data[-1][1]))
+clear()
+print("                                                            ")
+print("  ██╗███████╗██╗  ██╗ ██████╗██████╗  ██████╗ ████████╗██╗  ")
+print(" ██╔╝██╔════╝╚██╗██╔╝██╔════╝██╔══██╗██╔═══██╗╚══██╔══╝╚██╗ ")
+print("██╔╝ █████╗   ╚███╔╝ ██║     ██████╔╝██║   ██║   ██║    ╚██╗")
+print("╚██╗ ██╔══╝   ██╔██╗ ██║     ██╔══██╗██║   ██║   ██║    ██╔╝")
+print(" ╚██╗███████╗██╔╝ ██╗╚██████╗██████╔╝╚██████╔╝   ██║   ██╔╝ ")
+print("  ╚═╝╚══════╝╚═╝  ╚═╝ ╚═════╝╚═════╝  ╚═════╝    ╚═╝   ╚═╝  ")
+print("                                                            ")
 
+
+print('Press Ctrl+{0} to exit'.format('Break' if os.name == 'nt' else 'C'))
+symbols=symList()
+#symbols=["IOTAETH","TRXETH"]
+for symbol in symbols:
+  
+  if symbol!="123456" or symbol!="VIABNB":
+    #pprint(symbol)
+    try:
+      direction,nextInd,future_data,direction2= startMagic(symbol,0)
+
+      if direction>0:
+        stringa=bcolors.OKGREEN +"Positive" 
+      else: 
+        stringa=bcolors.FAIL +"Negative" 
+      print(f"Prevision for {symbol} is {stringa} by {direction2} Trend:{direction} Price can go from: {future_data[0][1]} to {future_data[-1][1]} {bcolors.ENDC}")
+      #print("Prevision is "+ stringa +" by "+str(direction)+" Price can go from: "+str(future_data[0][1])+" to "+str(future_data[-1][1]))
+    except (KeyboardInterrupt, SystemExit):
+        # Not strictly necessary if daemonic mode is enabled but should be done if possible!!
+      break
+    except:
+      pass
 #getData()
 
 
