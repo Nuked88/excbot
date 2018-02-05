@@ -21,8 +21,8 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-cdb =  MongoClient('173.249.9.155', 27017)
-#cdb =  MongoClient('localhost', 27017)
+#cdb =  MongoClient('173.249.9.155', 27017)
+cdb =  MongoClient('localhost', 27017)
 db = cdb.excbot
 data = db.data2
 score = db.score
