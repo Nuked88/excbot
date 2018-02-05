@@ -253,10 +253,7 @@ def startMagic(sym,enableGraph):
   yA=ta_data[:,1]
   
   
-  
-  if enableGraph == 1:
-  
-    
+
     
     
     
