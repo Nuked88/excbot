@@ -1,3 +1,7 @@
 pymongo==3.6.0
 python-binance==0.6.1
 apscheduler==3.5.0
+numpy==1.14.0
+matplotlib==2.1.2
+scipy==1.0.0
+sklearn==0.19.1

@@ -9,7 +9,9 @@ import pymongo
 from pymongo import MongoClient
 from pprint import pprint
 import os
-
+import threading
+from queue import Queue
+import time
 
 class bcolors:
     HEADER = '\033[95m'
@@ -21,8 +23,8 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-#cdb =  MongoClient('173.249.9.155', 27017)
-cdb =  MongoClient('localhost', 27017)
+cdb =  MongoClient('173.249.9.155', 27017)
+#cdb =  MongoClient('localhost', 27017)
 db = cdb.excbot
 data = db.data2
 score = db.score
@@ -343,28 +345,64 @@ print(" ╚██╗███████╗██╔╝ ██╗╚███�
 print("  ╚═╝╚══════╝╚═╝  ╚═╝ ╚═════╝╚═════╝  ╚═════╝    ╚═╝   ╚═╝  ")
 print("                                                            ")
 
+exitFlag = 0
 
 print('Press Ctrl+{0} to exit'.format('Break' if os.name == 'nt' else 'C'))
-symbols=symList()
-#symbols=["IOTAETH","TRXETH"]
-for symbol in symbols:
-  
-  if symbol!="123456" or symbol!="VIABNB":
-    #pprint(symbol)
-    try:
-      direction,nextInd,future_data,direction2= startMagic(symbol,0)
 
-      if direction>0:
-        stringa=bcolors.OKGREEN +"Positive" 
-      else: 
-        stringa=bcolors.FAIL +"Negative" 
-      print(f"Prevision for {symbol} is {stringa} by {direction2} Trend:{direction} Price can go from: {future_data[0][1]} to {future_data[-1][1]} {bcolors.ENDC}")
-      #print("Prevision is "+ stringa +" by "+str(direction)+" Price can go from: "+str(future_data[0][1])+" to "+str(future_data[-1][1]))
-    except (KeyboardInterrupt, SystemExit):
-        # Not strictly necessary if daemonic mode is enabled but should be done if possible!!
-      break
-    except:
-      pass
+#get symbols
+symbols=symList()
+
+def start_process(symbol):
+  try:
+    direction,nextInd,future_data,direction2= startMagic(symbol,0)
+
+    if direction>0:
+      stringa=bcolors.OKGREEN +"Positive" 
+    else: 
+      stringa=bcolors.FAIL +"Negative"
+
+    print(f"Prevision for {symbol} is {stringa} by {direction2} Trend:{direction} Price can go from: {future_data[0][1]} to {future_data[-1][1]} {bcolors.ENDC}")
+  except (KeyboardInterrupt, SystemExit):
+    sys.exit()
+    #print("Prevision is "+ stringa +" by "+str(direction)+" Price can go from: "+str(future_data[0][1])+" to "+str(future_data[-1][1]))
+  except:
+    pass
+
+# lock to serialize console output
+lock = threading.Lock()
+
+def do_work(item):
+    #time.sleep(.1) # pretend to do some lengthy work.
+    start_process(item)
+    # Make sure the whole print completes or threads can mix up output in one line.
+    #with lock:
+
+# The worker thread pulls an item from the queue and processes it
+def worker():
+    while True:
+        item = q.get()
+        do_work(item)
+        q.task_done()
+
+# Create the queue and thread pool.
+q = Queue(40)
+for i in range(10):
+     t = threading.Thread(target=worker)
+     t.daemon = True  # thread dies when main thread (only non-daemon thread) exits.
+     t.start()
+
+# stuff work items on the queue (in this case, just a number).
+start = time.perf_counter()
+for item in symbols:
+   q.put(item)
+
+
+q.join()
+
+#symbols=["IOTAETH","TRXETH"]
+#for symbol in symbols: 
+  #pprint(symbol)
+
 #getData()
 
 

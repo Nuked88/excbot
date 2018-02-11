@@ -1,4 +1,5 @@
 #!/bin/sh
+sudo apt-get install -y python3-tk
 sudo chmod a+x ./run.sh
 echo "Installing Service..."
 cp -f ./service/excbot.sh /usr/local/bin/

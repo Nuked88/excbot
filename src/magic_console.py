@@ -20,8 +20,8 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
-#cdb =  MongoClient('173.249.9.155', 27017)
-cdb =  MongoClient('localhost', 27017)
+cdb =  MongoClient('173.249.9.155', 27017)
+#cdb =  MongoClient('localhost', 27017)
 db = cdb.excbot
 data = db.data2
 score = db.score
@@ -342,6 +342,7 @@ print("                                          ")
 
 print('Press Ctrl+{0} to exit'.format('Break' if os.name == 'nt' else 'C'))
 symbols=symList()
+width=9
 #symbols=["IOTAETH","TRXETH"]
 for symbol in symbols:
   
@@ -354,7 +355,7 @@ for symbol in symbols:
         stringa=bcolors.OKGREEN +"Positive" 
       else: 
         stringa=bcolors.FAIL +"Negative" 
-      print(f"Prevision for {symbol} is {stringa} by {direction2} Trend:{direction} Price can go from: {future_data[0][1]} to {future_data[-1][1]} {bcolors.ENDC}")
+      print(f"| Prevision for | {symbol: <{width}} | is {stringa} | by {direction2:<25} | Trend:{direction:>4} | Price can go from: | {future_data[0][1]:<25} | to | {future_data[-1][1]:<25} {bcolors.ENDC} |")
       #print("Prevision is "+ stringa +" by "+str(direction)+" Price can go from: "+str(future_data[0][1])+" to "+str(future_data[-1][1]))
     except (KeyboardInterrupt, SystemExit):
         # Not strictly necessary if daemonic mode is enabled but should be done if possible!!
